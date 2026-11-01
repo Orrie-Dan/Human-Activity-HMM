@@ -1,0 +1,53 @@
+"""Model evaluation metrics (accuracy, confusion matrix, per-class scores)."""
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import accuracy_score, confusion_matrix
+
+
+def confusion_table(y_true: Sequence, y_pred: Sequence, labels: Sequence[str]) -> pd.DataFrame:
+    """Confusion matrix as a DataFrame (rows = true, columns = predicted)."""
+    cm = confusion_matrix(y_true, y_pred, labels=list(labels))
+    return pd.DataFrame(
+        cm,
+        index=pd.Index(labels, name="true"),
+        columns=pd.Index(labels, name="predicted"),
+    )
+
+
+def per_class_metrics(confusion: pd.DataFrame) -> pd.DataFrame:
+    """Sensitivity (recall), specificity, precision, F1, and support for each class."""
+    cm = confusion.to_numpy(dtype=float)
+    tp = np.diag(cm)
+    fn = cm.sum(axis=1) - tp
+    fp = cm.sum(axis=0) - tp
+    tn = cm.sum() - tp - fn - fp
+
+    def ratio(a, b):
+        return np.divide(a, b, out=np.zeros_like(a), where=b > 0)
+
+    sensitivity = ratio(tp, tp + fn)
+    precision = ratio(tp, tp + fp)
+    return pd.DataFrame(
+        {
+            "sensitivity": sensitivity,
+            "specificity": ratio(tn, tn + fp),
+            "precision": precision,
+            "f1": ratio(2 * precision * sensitivity, precision + sensitivity),
+            "support": cm.sum(axis=1).astype(int),
+        },
+        index=confusion.index,
+    )
+
+
+def evaluate(y_true: Sequence, y_pred: Sequence, labels: Sequence[str]) -> dict:
+    """Overall accuracy, confusion matrix, and per-class metrics in one dict."""
+    confusion = confusion_table(y_true, y_pred, labels)
+    return {
+        "accuracy": float(accuracy_score(y_true, y_pred)),
+        "confusion": confusion,
+        "per_class": per_class_metrics(confusion),
+    }
