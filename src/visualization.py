@@ -189,7 +189,8 @@ def plot_decoded(
         _, ax = plt.subplots(figsize=(7, 2.2))
     state = {a: i for i, a in enumerate(ACTIVITIES)}
     times = np.asarray(times, dtype=float)
-    true_idx = np.array([state[a] for a in true])
+    # Windows whose true label is not an activity (e.g. "transition") leave a gap in the band.
+    true_idx = np.array([state.get(a, np.nan) for a in true], dtype=float)
     pred_idx = np.array([state[a] for a in predicted])
     ax.step(times, true_idx, where="post", color=GRID, lw=8, solid_capstyle="butt",
             label="true", zorder=1)
@@ -207,4 +208,59 @@ def plot_decoded(
                            mpl.lines.Line2D([], [], color=NEUTRAL, marker="o", ms=5,
                                             markerfacecolor=TEXT_SECONDARY, label="predicted")],
                   loc="upper left", bbox_to_anchor=(1.01, 1))
+    return ax
+
+
+def plot_emissions(
+    means: np.ndarray,
+    variances: np.ndarray,
+    feature_columns: Sequence[str],
+    features: Sequence[str],
+    ncols: int = 3,
+) -> plt.Figure:
+    """Gaussian emission densities p(x_f | state) for selected features, one panel each.
+
+    ``means``/``variances`` are the HMM's (n_states, n_features) parameters in
+    standardized units. The y axis is symlog so broad and narrow states both show.
+    """
+    nrows = int(np.ceil(len(features) / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(3.6 * ncols, 2.5 * nrows), squeeze=False)
+    for ax, feature in zip(axes.flat, features):
+        f = list(feature_columns).index(feature)
+        mu, sd = means[:, f], np.sqrt(variances[:, f])
+        x = np.linspace((mu - 3.5 * sd).min(), (mu + 3.5 * sd).max(), 600)
+        for k, activity in enumerate(ACTIVITIES):
+            pdf = np.exp(-0.5 * ((x - mu[k]) / sd[k]) ** 2) / (sd[k] * np.sqrt(2 * np.pi))
+            ax.plot(x, pdf, color=ACTIVITY_COLORS[activity], lw=1.8, label=activity)
+            ax.fill_between(x, pdf, color=ACTIVITY_COLORS[activity], alpha=0.12, lw=0)
+        ax.set_yscale("symlog", linthresh=0.05)
+        ax.set_ylim(bottom=0)
+        ax.set_title(feature, fontsize=9)
+        ax.set_xlabel("standardized value")
+    for ax in axes.flat[len(features):]:
+        ax.set_visible(False)
+    axes.flat[0].set_ylabel("density (symlog)")
+    axes.flat[min(len(features), ncols) - 1].legend(loc="upper left", bbox_to_anchor=(1.01, 1))
+    fig.tight_layout()
+    return fig
+
+
+def plot_test_timeline(
+    signals: pd.DataFrame,
+    segments: pd.DataFrame,
+    title: str,
+    channel: str = "acc_mag",
+    ax: plt.Axes | None = None,
+) -> plt.Axes:
+    """One long test recording with its labeled activity segments shaded."""
+    if ax is None:
+        _, ax = plt.subplots(figsize=(12, 2.2))
+    ax.plot(signals[TIMESTAMP_COLUMN], signals[channel], color=TEXT_SECONDARY, lw=0.7)
+    for seg in segments.itertuples():
+        ax.axvspan(seg.start_s, seg.end_s, color=ACTIVITY_COLORS[seg.activity], alpha=0.18, lw=0)
+        ax.text((seg.start_s + seg.end_s) / 2, 1.0, seg.activity, transform=ax.get_xaxis_transform(),
+                ha="center", va="bottom", fontsize=8, color=TEXT_PRIMARY)
+    ax.set(xlabel="time (s)", ylabel=channel)
+    ax.set_title(title, pad=14)
+    ax.set_xlim(signals[TIMESTAMP_COLUMN].iloc[0], signals[TIMESTAMP_COLUMN].iloc[-1])
     return ax

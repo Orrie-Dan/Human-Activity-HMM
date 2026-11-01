@@ -106,8 +106,25 @@ recording,participant,activity,source,phone_model,os,app,sampling_rate_hz,placem
 p01_walking_01,p01,walking,walking-2026-10-29_17-19-57.zip,Pixel 7,Android 14,Sensor Logger 1.x,100,right hand waist,
 ```
 
-`data/raw/` is listed in `.gitignore`. Share the raw data separately and don't
-commit it.
+The CSV files in `data/raw/` are committed to the repository. The original
+Sensor Logger zips are not (`*.zip` is ignored).
+
+### Unseen test recordings
+
+Test recordings go in `data/test/`, never in `data/raw/`, so they are never used
+for training. Each one is a single continuous recording (about 60 s) in which you
+switch between several activities. Name the folder `<participant>_mixed_<nn>` and
+add one row per activity segment to `data/test/labels.csv`:
+
+```
+recording,start_s,end_s,activity
+p01_mixed_01,1.0,12.5,walking
+p01_mixed_01,13.5,26.3,still
+```
+
+Times are seconds from the start of the recording. Leave the handling between
+activities (picking the phone up, putting it down) outside every segment. Windows
+there are decoded but not scored. Then run `python -m src.test_set`.
 
 ## 6. Using a different app or CSV format
 

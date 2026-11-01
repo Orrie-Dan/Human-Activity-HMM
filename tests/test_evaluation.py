@@ -27,3 +27,18 @@ def test_class_never_predicted_has_zero_scores():
     c = result["per_class"].loc["c"]
     assert c["sensitivity"] == 0 and c["precision"] == 0 and c["f1"] == 0
     assert result["per_class"].loc["b", "specificity"] == 1.0
+
+
+def test_report_table_one_vs_rest_and_overall():
+    import pandas as pd
+    from src.evaluation import report_table
+
+    cm = pd.DataFrame([[8, 2], [1, 9]], index=["a", "b"], columns=["a", "b"])
+    table = report_table(cm)
+    assert list(table.index) == ["a", "b", "Overall"]
+    assert table.loc["a", "Number of samples"] == 10
+    assert table.loc["a", "Sensitivity"] == 0.8
+    assert table.loc["a", "Specificity"] == 0.9
+    assert table.loc["a", "Accuracy"] == 17 / 20
+    assert table.loc["Overall", "Accuracy"] == 17 / 20
+    assert table.loc["Overall", "Number of samples"] == 20

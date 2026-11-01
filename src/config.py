@@ -10,6 +10,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
+# Unseen test recordings (new session, several activities each). Never used for training.
+TEST_DATA_DIR = DATA_DIR / "test"
+TEST_LABELS_FILE = TEST_DATA_DIR / "labels.csv"
 FIGURES_DIR = PROJECT_ROOT / "reports" / "figures"
 
 # --- Activities and canonical columns ----------------------------------------
@@ -70,6 +73,11 @@ MAGNITUDE_COLUMNS: dict[str, tuple[str, ...]] = {
 }
 
 FEATURES_FILE = PROCESSED_DATA_DIR / "features.csv"
+TEST_FEATURES_FILE = PROCESSED_DATA_DIR / "test_features.csv"
+
+# Label for test windows that overlap a change of activity (or handling between
+# activities). They are decoded with the rest of the sequence but not scored.
+TRANSITION_LABEL = "transition"
 
 
 # --- HMM ---------------------------------------------------------------------

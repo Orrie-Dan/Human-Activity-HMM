@@ -20,11 +20,10 @@ htmlcov/
 # Jupyter
 .ipynb_checkpoints/
 
-# Data (keep folder structure, not contents)
-data/raw/*
+# Data: raw and test recordings (CSV) are tracked; derived features are rebuilt.
 data/processed/*
-!data/raw/.gitkeep
 !data/processed/.gitkeep
+data/**/*.zip
 
 # Generated outputs
 reports/figures/*

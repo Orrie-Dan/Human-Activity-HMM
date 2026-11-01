@@ -1,0 +1,12 @@
+recording,start_s,end_s,activity
+p01_mixed_01,1.0,12.5,walking
+p01_mixed_01,13.5,26.3,still
+p01_mixed_01,28.5,37.0,jumping
+p01_mixed_01,37.5,44.5,standing
+p01_mixed_01,46.5,51.0,still
+p01_mixed_01,52.5,62.3,walking
+p01_mixed_02,0.0,15.3,still
+p01_mixed_02,18.0,25.5,jumping
+p01_mixed_02,26.0,42.5,walking
+p01_mixed_02,43.0,53.0,standing
+p01_mixed_02,53.5,64.0,walking

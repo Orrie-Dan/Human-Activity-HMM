@@ -51,3 +51,31 @@ def evaluate(y_true: Sequence, y_pred: Sequence, labels: Sequence[str]) -> dict:
         "confusion": confusion,
         "per_class": per_class_metrics(confusion),
     }
+
+
+def report_table(confusion: pd.DataFrame) -> pd.DataFrame:
+    """Results table in the assignment's format, one row per activity plus an overall row.
+
+    Per activity: number of windows, sensitivity, specificity, and one-vs-rest
+    accuracy ((TP + TN) / N). The overall row gives the total window count and
+    the usual multi-class accuracy (correct windows / all windows).
+    """
+    cm = confusion.to_numpy(dtype=float)
+    n = cm.sum()
+    tp = np.diag(cm)
+    fn = cm.sum(axis=1) - tp
+    fp = cm.sum(axis=0) - tp
+    tn = n - tp - fn - fp
+    per_class = per_class_metrics(confusion)
+    table = pd.DataFrame(
+        {
+            "Number of samples": per_class["support"],
+            "Sensitivity": per_class["sensitivity"],
+            "Specificity": per_class["specificity"],
+            "Accuracy": (tp + tn) / n if n else np.zeros_like(tp),
+        },
+        index=pd.Index(confusion.index, name="State (activity)"),
+    )
+    table.loc["Overall"] = [int(n), np.nan, np.nan, tp.sum() / n if n else 0.0]
+    table["Number of samples"] = table["Number of samples"].astype(int)
+    return table

@@ -1,0 +1,3 @@
+recording,participant,source,phone_model,os,app,sampling_rate_hz,placement,duration_s,activity_order,notes
+p01_mixed_01,p01,test-2026-11-01_16-03-49.zip,iPhone 11 Pro,ios 18.7.8,Sensor Logger 1.68,100,right hand waist / flat on table for still,62.3,walking > still > jumping > standing > still > walking,"new session, never used for training; segment times in labels.csv"
+p01_mixed_02,p01,test2-2026-11-01_16-05-18.zip,iPhone 11 Pro,ios 18.7.8,Sensor Logger 1.68,100,right hand waist / flat on table for still,64.1,still > jumping > walking > standing > walking,"new session, never used for training; segment times in labels.csv"

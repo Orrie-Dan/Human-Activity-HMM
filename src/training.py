@@ -11,7 +11,13 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from src.config import ACTIVITIES, DEFAULT_HMM_CONFIG, FEATURES_FILE, HMMConfig
+from src.config import (
+    ACTIVITIES,
+    DEFAULT_HMM_CONFIG,
+    FEATURES_FILE,
+    TEST_FEATURES_FILE,
+    HMMConfig,
+)
 from src.dataset import ID_COLUMNS
 from src.evaluation import evaluate
 from src.hmm import GaussianHMM
@@ -107,8 +113,47 @@ def cross_validate(
     return out
 
 
+def predict_unseen(
+    train: pd.DataFrame,
+    test: pd.DataFrame,
+    config: HMMConfig = DEFAULT_HMM_CONFIG,
+    variants: Sequence[str] = ("supervised", "baum_welch"),
+) -> tuple[pd.DataFrame, dict[str, TrainedModel]]:
+    """Train on all of ``train`` and Viterbi-decode every test recording.
+
+    Returns the test identifier columns plus one prediction column per variant,
+    and the fitted models. Transition windows are predicted too; drop them
+    (see ``scored_windows``) before computing metrics.
+    """
+    out = test[ID_COLUMNS].copy()
+    models = {}
+    for name in variants:
+        models[name] = train_model(train, config, baum_welch=(name == "baum_welch"))
+        out[name] = predict(models[name], test)
+    return out, models
+
+
+def scored_windows(results: pd.DataFrame) -> pd.DataFrame:
+    """Only windows that lie inside one labeled activity segment."""
+    return results[results["activity"].isin(ACTIVITIES)]
+
+
 def main() -> None:
     table = pd.read_csv(FEATURES_FILE)
+    if TEST_FEATURES_FILE.exists():
+        test = pd.read_csv(TEST_FEATURES_FILE)
+        results, _ = predict_unseen(table, test)
+        scored = scored_windows(results)
+        print(f"=== unseen test set: {test['recording'].nunique()} recordings, "
+              f"{len(scored)} scored windows ({len(results) - len(scored)} transition) ===")
+        for variant in ("supervised", "baum_welch"):
+            metrics = evaluate(scored["activity"], scored[variant], ACTIVITIES)
+            print(f"--- {variant}: accuracy {metrics['accuracy']:.3f}")
+            print(metrics["confusion"], "\n")
+            print(metrics["per_class"].round(3), "\n")
+    else:
+        print(f"no {TEST_FEATURES_FILE.name}; run python -m src.test_set for the unseen test\n")
+
     results = cross_validate(table)
     n_folds = results["fold"].nunique()
     print(f"{len(table)} windows, {table['recording'].nunique()} recordings, "
