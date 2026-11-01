@@ -72,9 +72,10 @@ python -m src.training   # unseen test + cross-validation
 
 ## Data collection videos
 
-One video per activity, showing the full body while recording:
-[standing](videos/standing.mp4) · [walking](videos/walking.mp4) ·
-[jumping](videos/jumping.mp4) · [still](videos/still.mp4)
+One video per activity (standing, walking, jumping, still), showing the full body while recording:
+**[Watch the videos on Canva](https://canva.link/dd5i0wrclq0rkzu)**
+
+Local copies are also in [`videos/`](videos/).
 
 ## Structure
 
